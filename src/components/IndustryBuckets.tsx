@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronDown, ChevronRight, Search, Filter } from "lucide-react";
+import { ChevronDown, ChevronRight, Search, X } from "lucide-react";
 import { Stock } from "@/lib/types";
 import StockCard from "./StockCard";
 
@@ -10,10 +10,14 @@ interface IndustryBucketsProps {
   onRemove: (symbol: string) => void;
 }
 
+function getIndustryKey(stock: Stock): string {
+  return stock.sector || stock.industry || "Other";
+}
+
 function groupByIndustry(stocks: Stock[]): Record<string, Stock[]> {
   const groups: Record<string, Stock[]> = {};
   for (const stock of stocks) {
-    const key = stock.sector || stock.industry || "Other";
+    const key = getIndustryKey(stock);
     if (!groups[key]) groups[key] = [];
     groups[key].push(stock);
   }
@@ -45,6 +49,7 @@ function IndustryGroup({
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:opacity-80"
         style={{ background: "var(--card-bg)" }}
+        aria-expanded={open}
       >
         <div className="flex items-center gap-3">
           {open ? (
@@ -85,55 +90,64 @@ function IndustryGroup({
   );
 }
 
+const ALL_INDUSTRIES = "All";
+
 export default function IndustryBuckets({
   stocks,
   onRemove,
 }: IndustryBucketsProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState<string>(ALL_INDUSTRIES);
 
+  // Pre-compute industry groups from ALL stocks upfront — independent of search or filter
+  const allGroups = useMemo(() => groupByIndustry(stocks), [stocks]);
+
+  // Derive stable list of industry names from pre-computed groups
   const allIndustries = useMemo(() => {
-    const set = new Set(stocks.map((s) => s.sector || s.industry || "Other"));
-    return Array.from(set).sort();
-  }, [stocks]);
-
-  const filteredStocks = useMemo(() => {
-    return stocks.filter((s) => {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        !query ||
-        s.symbol.toLowerCase().includes(query) ||
-        s.name.toLowerCase().includes(query);
-
-      const industryKey = s.sector || s.industry || "Other";
-      const matchesIndustry =
-        selectedIndustries.length === 0 ||
-        selectedIndustries.includes(industryKey);
-
-      return matchesSearch && matchesIndustry;
-    });
-  }, [stocks, searchQuery, selectedIndustries]);
-
-  const groups = useMemo(
-    () => groupByIndustry(filteredStocks),
-    [filteredStocks]
-  );
-
-  const sortedIndustries = Object.keys(groups).sort((a, b) =>
-    a === "Other" ? 1 : b === "Other" ? -1 : a.localeCompare(b)
-  );
-
-  const toggleIndustry = (industry: string) => {
-    setSelectedIndustries((prev) =>
-      prev.includes(industry)
-        ? prev.filter((i) => i !== industry)
-        : [...prev, industry]
+    return Object.keys(allGroups).sort((a, b) =>
+      a === "Other" ? 1 : b === "Other" ? -1 : a.localeCompare(b)
     );
-  };
+  }, [allGroups]);
 
-  const hasFilters =
-    searchQuery.trim() !== "" || selectedIndustries.length > 0;
+  // Filter within pre-computed groups: apply industry selection + search independently
+  const visibleGroups = useMemo(() => {
+    const industriesToShow =
+      selectedIndustry === ALL_INDUSTRIES
+        ? allIndustries
+        : allIndustries.filter((i) => i === selectedIndustry);
+
+    const result: Record<string, Stock[]> = {};
+    for (const industry of industriesToShow) {
+      const group = allGroups[industry];
+      if (!group) continue;
+      const query = searchQuery.trim().toLowerCase();
+      const filtered = query
+        ? group.filter(
+            (s) =>
+              s.symbol.toLowerCase().includes(query) ||
+              s.name.toLowerCase().includes(query)
+          )
+        : group;
+      if (filtered.length > 0) result[industry] = filtered;
+    }
+    return result;
+  }, [allGroups, allIndustries, selectedIndustry, searchQuery]);
+
+  const sortedVisibleIndustries = useMemo(
+    () =>
+      Object.keys(visibleGroups).sort((a, b) =>
+        a === "Other" ? 1 : b === "Other" ? -1 : a.localeCompare(b)
+      ),
+    [visibleGroups]
+  );
+
+  const hasActiveFilter =
+    searchQuery.trim() !== "" || selectedIndustry !== ALL_INDUSTRIES;
+
+  const totalVisible = Object.values(visibleGroups).reduce(
+    (sum, arr) => sum + arr.length,
+    0
+  );
 
   return (
     <div className="space-y-3">
@@ -145,17 +159,23 @@ export default function IndustryBuckets({
           borderColor: "var(--card-border)",
         }}
       >
+        {/* Search + clear row */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search
               className="w-4 h-4 absolute left-3 top-2.5"
               style={{ color: "var(--muted)" }}
+              aria-hidden="true"
             />
+            <label htmlFor="industry-search" className="sr-only">
+              Search stocks by name or symbol
+            </label>
             <input
+              id="industry-search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by name or symbol…"
+              placeholder="Search by name or symbol…"
               className="w-full pl-9 pr-3 py-2 rounded-lg text-sm border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               style={{
                 background: "var(--input-bg)",
@@ -164,70 +184,71 @@ export default function IndustryBuckets({
               }}
             />
           </div>
-          {allIndustries.length > 1 && (
-            <button
-              onClick={() => setShowFilters((v) => !v)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm border transition-colors ${
-                selectedIndustries.length > 0
-                  ? "border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400"
-                  : ""
-              }`}
-              style={
-                selectedIndustries.length === 0
-                  ? {
-                      borderColor: "var(--input-border)",
-                      color: "var(--muted)",
-                      background: "var(--card-bg)",
-                    }
-                  : {}
-              }
-            >
-              <Filter className="w-4 h-4" />
-              <span>Industry</span>
-              {selectedIndustries.length > 0 && (
-                <span className="ml-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                  {selectedIndustries.length}
-                </span>
-              )}
-            </button>
-          )}
-          {hasFilters && (
+          {hasActiveFilter && (
             <button
               onClick={() => {
                 setSearchQuery("");
-                setSelectedIndustries([]);
+                setSelectedIndustry(ALL_INDUSTRIES);
               }}
-              className="text-xs font-medium text-blue-500 hover:text-blue-600 whitespace-nowrap"
+              aria-label="Clear all filters"
+              className="flex items-center gap-1 text-xs font-medium text-blue-500 hover:text-blue-600 whitespace-nowrap"
             >
-              Clear all
+              <X className="w-3 h-3" />
+              Clear
             </button>
           )}
         </div>
 
-        {/* Industry filter pills */}
-        {showFilters && allIndustries.length > 1 && (
-          <div className="flex flex-wrap gap-2 pt-1">
+        {/* Industry filter chips — always visible, derived from pre-computed groups */}
+        {allIndustries.length > 1 && (
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-label="Filter by industry"
+          >
+            {/* "All" chip */}
+            <button
+              onClick={() => setSelectedIndustry(ALL_INDUSTRIES)}
+              aria-pressed={selectedIndustry === ALL_INDUSTRIES}
+              aria-label={`Show all industries, ${stocks.length} stocks`}
+              className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                selectedIndustry === ALL_INDUSTRIES
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "hover:border-blue-400 hover:text-blue-600"
+              }`}
+              style={
+                selectedIndustry !== ALL_INDUSTRIES
+                  ? { borderColor: "var(--input-border)", color: "var(--muted)" }
+                  : {}
+              }
+            >
+              All
+              <span className="ml-1 opacity-70">({stocks.length})</span>
+            </button>
+
+            {/* Per-industry chips */}
             {allIndustries.map((industry) => {
-              const active = selectedIndustries.includes(industry);
+              const active = selectedIndustry === industry;
+              const count = allGroups[industry]?.length ?? 0;
               return (
                 <button
                   key={industry}
-                  onClick={() => toggleIndustry(industry)}
+                  onClick={() => setSelectedIndustry(industry)}
+                  aria-pressed={active}
+                  aria-label={`Filter to ${industry}, ${count} stocks`}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                     active
                       ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-400 hover:border-blue-400 hover:text-blue-600"
+                      : "hover:border-blue-400 hover:text-blue-600"
                   }`}
                   style={
                     !active
-                      ? {
-                          borderColor: "var(--input-border)",
-                          color: "var(--muted)",
-                        }
+                      ? { borderColor: "var(--input-border)", color: "var(--muted)" }
                       : {}
                   }
                 >
                   {industry}
+                  <span className="ml-1 opacity-70">({count})</span>
                 </button>
               );
             })}
@@ -236,7 +257,7 @@ export default function IndustryBuckets({
       </div>
 
       {/* Industry buckets */}
-      {filteredStocks.length === 0 ? (
+      {totalVisible === 0 ? (
         <div
           className="rounded-xl border p-8 text-center text-sm"
           style={{
@@ -249,11 +270,11 @@ export default function IndustryBuckets({
         </div>
       ) : (
         <div className="space-y-3">
-          {sortedIndustries.map((industry, i) => (
+          {sortedVisibleIndustries.map((industry, i) => (
             <IndustryGroup
               key={industry}
               industry={industry}
-              stocks={groups[industry]}
+              stocks={visibleGroups[industry]}
               onRemove={onRemove}
               defaultOpen={i < 3}
             />
