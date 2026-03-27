@@ -79,9 +79,15 @@ export default function NewsFeed({ news, onSummarize }: NewsFeedProps) {
 
   if (news.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-        <Newspaper className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-500">
+      <div
+        className="rounded-xl border p-8 text-center"
+        style={{
+          background: "var(--card-bg)",
+          borderColor: "var(--card-border)",
+        }}
+      >
+        <Newspaper className="w-12 h-12 mx-auto mb-3" style={{ color: "var(--card-border)" }} />
+        <p style={{ color: "var(--muted)" }}>
           Add stocks to your watchlist to see news
         </p>
       </div>
@@ -90,22 +96,29 @@ export default function NewsFeed({ news, onSummarize }: NewsFeedProps) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+      <h2
+        className="text-lg font-semibold flex items-center gap-2"
+        style={{ color: "var(--foreground)" }}
+      >
         <Newspaper className="w-5 h-5 text-blue-500" />
         Latest News
       </h2>
       {news.map((item, index) => (
         <div
           key={`${item.url}-${index}`}
-          className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow"
+          className="rounded-xl border p-4 hover:shadow-md transition-shadow"
+          style={{
+            background: "var(--card-bg)",
+            borderColor: "var(--card-border)",
+          }}
         >
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+              <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
                 {item.symbol}
               </span>
               <SentimentBadge sentiment={item.sentiment} />
-              <span className="text-xs text-gray-400">
+              <span className="text-xs" style={{ color: "var(--muted)" }}>
                 {item.source} · {timeAgo(item.publishedAt)}
               </span>
             </div>
@@ -113,15 +126,16 @@ export default function NewsFeed({ news, onSummarize }: NewsFeedProps) {
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-gray-900 hover:text-blue-600 transition-colors flex items-start gap-1"
+              className="font-medium hover:text-blue-600 transition-colors flex items-start gap-1"
+              style={{ color: "var(--foreground)" }}
             >
               {item.title}
-              <ExternalLink className="w-3 h-3 mt-1 flex-shrink-0 text-gray-400" />
+              <ExternalLink className="w-3 h-3 mt-1 flex-shrink-0" style={{ color: "var(--muted)" }} />
             </a>
 
             {item.summary ? (
-              <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-100">
-                <p className="text-sm text-gray-700 leading-relaxed flex items-start gap-2">
+              <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg border border-purple-100 dark:border-purple-800/30">
+                <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed flex items-start gap-2">
                   <Sparkles className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
                   {item.summary}
                 </p>
@@ -130,7 +144,7 @@ export default function NewsFeed({ news, onSummarize }: NewsFeedProps) {
               <button
                 onClick={() => handleSummarize(index)}
                 disabled={summarizing === index}
-                className="mt-2 text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1 disabled:opacity-50"
+                className="mt-2 text-xs text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300 font-medium flex items-center gap-1 disabled:opacity-50"
               >
                 {summarizing === index ? (
                   <>

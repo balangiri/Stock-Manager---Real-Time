@@ -7,6 +7,8 @@ export interface Stock {
   marketCap?: number;
   pe?: number;
   volume?: number;
+  industry?: string;
+  sector?: string;
 }
 
 export interface WatchlistItem {
@@ -48,4 +50,13 @@ export interface StockDetail {
   profit: number;
   month1Return?: number;
   month3Return?: number;
+}
+
+export interface MarketIndex {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  sparkline: number[];
 }
