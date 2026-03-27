@@ -5,7 +5,10 @@ import { Stock, NewsItem, WatchlistItem } from "@/lib/types";
 import StockCard from "@/components/StockCard";
 import WatchlistPanel from "@/components/WatchlistPanel";
 import NewsFeed from "@/components/NewsFeed";
-import { BarChart3, RefreshCw, Loader2, Search } from "lucide-react";
+import MarketIndices from "@/components/MarketIndices";
+import IndustryBuckets from "@/components/IndustryBuckets";
+import ThemeToggle from "@/components/ThemeToggle";
+import { BarChart3, RefreshCw, Loader2, LayoutGrid, List } from "lucide-react";
 
 const REFRESH_INTERVAL = 15000; // 15 seconds
 
@@ -15,7 +18,7 @@ export default function Dashboard() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filterQuery, setFilterQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"industry" | "list">("industry");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch watchlist from Supabase
@@ -73,6 +76,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (watchlist.length > 0) {
       const symbols = watchlist.map((w) => w.symbol);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchStocks(symbols);
       fetchNews(symbols);
     } else {
@@ -156,99 +160,173 @@ export default function Dashboard() {
     setRefreshing(false);
   };
 
-  // Filter stocks by search query
-  const filteredStocks = stocks.filter(
-    (s) =>
-      s.symbol.toLowerCase().includes(filterQuery.toLowerCase()) ||
-      s.name.toLowerCase().includes(filterQuery.toLowerCase())
-  );
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--background)" }}
+      >
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: "var(--background)" }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header
+        className="border-b sticky top-0 z-10"
+        style={{
+          background: "var(--header-bg)",
+          borderColor: "var(--header-border)",
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <BarChart3 className="w-8 h-8 text-blue-600" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Stock Intel</h1>
-              <p className="text-xs text-gray-500">
+              <h1
+                className="text-xl font-bold"
+                style={{ color: "var(--foreground)" }}
+              >
+                Stock Intel
+              </h1>
+              <p className="text-xs" style={{ color: "var(--muted)" }}>
                 AI-powered stock intelligence
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span
+              className="text-xs hidden sm:inline"
+              style={{ color: "var(--muted)" }}
+            >
               Auto-refreshes every 15s
             </span>
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-blue-600 border border-gray-300 rounded-lg hover:border-blue-300 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors disabled:opacity-50"
+              style={{
+                color: "var(--muted)",
+                borderColor: "var(--card-border)",
+                background: "var(--card-bg)",
+              }}
             >
               <RefreshCw
                 className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
               />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
+            <ThemeToggle />
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Market Indices Section */}
+        <MarketIndices />
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column: Watchlist */}
           <div className="lg:col-span-2 space-y-4">
             <WatchlistPanel onAdd={handleAddStock} />
 
-            {/* Search/Filter bar for existing watchlist */}
             {stocks.length > 0 && (
-              <div className="relative">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  value={filterQuery}
-                  onChange={(e) => setFilterQuery(e.target.value)}
-                  placeholder="Filter watchlist by name or symbol..."
-                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-400"
-                />
-              </div>
+              <>
+                {/* View mode toggle */}
+                <div className="flex items-center justify-between">
+                  <h2
+                    className="text-base font-semibold"
+                    style={{ color: "var(--foreground)" }}
+                  >
+                    My Watchlist
+                    <span
+                      className="ml-2 text-xs font-normal"
+                      style={{ color: "var(--muted)" }}
+                    >
+                      ({stocks.length} stocks)
+                    </span>
+                  </h2>
+                  <div
+                    className="flex items-center rounded-lg border p-0.5 gap-0.5"
+                    style={{
+                      borderColor: "var(--card-border)",
+                      background: "var(--card-bg)",
+                    }}
+                  >
+                    <button
+                      onClick={() => setViewMode("industry")}
+                      title="Industry view"
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        viewMode === "industry"
+                          ? "bg-blue-600 text-white"
+                          : ""
+                      }`}
+                      style={
+                        viewMode !== "industry"
+                          ? { color: "var(--muted)" }
+                          : {}
+                      }
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">By Industry</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      title="List view"
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        viewMode === "list" ? "bg-blue-600 text-white" : ""
+                      }`}
+                      style={
+                        viewMode !== "list" ? { color: "var(--muted)" } : {}
+                      }
+                    >
+                      <List className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">All</span>
+                    </button>
+                  </div>
+                </div>
+
+                {viewMode === "industry" ? (
+                  <IndustryBuckets
+                    stocks={stocks}
+                    onRemove={handleRemoveStock}
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {stocks.map((stock) => (
+                      <StockCard
+                        key={stock.symbol}
+                        stock={stock}
+                        onRemove={handleRemoveStock}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
-            {stocks.length > 0 ? (
-              filteredStocks.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {filteredStocks.map((stock) => (
-                    <StockCard
-                      key={stock.symbol}
-                      stock={stock}
-                      onRemove={handleRemoveStock}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                  <p className="text-sm text-gray-500">
-                    No stocks match &quot;{filterQuery}&quot;
-                  </p>
-                </div>
-              )
-            ) : (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                <BarChart3 className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-700 mb-2">
+            {stocks.length === 0 && (
+              <div
+                className="rounded-xl border p-12 text-center"
+                style={{
+                  background: "var(--card-bg)",
+                  borderColor: "var(--card-border)",
+                }}
+              >
+                <BarChart3
+                  className="w-16 h-16 mx-auto mb-4"
+                  style={{ color: "var(--card-border)" }}
+                />
+                <h3
+                  className="text-lg font-medium mb-2"
+                  style={{ color: "var(--foreground)" }}
+                >
                   Your watchlist is empty
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm" style={{ color: "var(--muted)" }}>
                   Add stocks like RELIANCE, TCS, or INFY to get started
                 </p>
               </div>

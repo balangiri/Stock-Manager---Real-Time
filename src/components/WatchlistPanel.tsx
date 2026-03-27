@@ -97,8 +97,17 @@ export default function WatchlistPanel({ onAdd }: WatchlistPanelProps) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+    <div
+      className="rounded-xl border p-4"
+      style={{
+        background: "var(--card-bg)",
+        borderColor: "var(--card-border)",
+      }}
+    >
+      <h2
+        className="text-lg font-semibold mb-3 flex items-center gap-2"
+        style={{ color: "var(--foreground)" }}
+      >
         <Search className="w-5 h-5 text-blue-500" />
         Add Stock
       </h2>
@@ -110,11 +119,19 @@ export default function WatchlistPanel({ onAdd }: WatchlistPanelProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by name or symbol... e.g. Reliance, TCS"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              style={{
+                background: "var(--input-bg)",
+                borderColor: "var(--input-border)",
+                color: "var(--foreground)",
+              }}
               disabled={loading}
             />
             {searching && (
-              <Loader2 className="w-4 h-4 animate-spin text-gray-400 absolute right-3 top-2.5" />
+              <Loader2
+                className="w-4 h-4 animate-spin absolute right-3 top-2.5"
+                style={{ color: "var(--muted)" }}
+              />
             )}
           </div>
           <button
@@ -133,22 +150,38 @@ export default function WatchlistPanel({ onAdd }: WatchlistPanelProps) {
 
         {/* Autocomplete Dropdown */}
         {showDropdown && (
-          <div className="absolute z-20 top-full left-0 right-16 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+          <div
+            className="absolute z-20 top-full left-0 right-16 mt-1 rounded-lg shadow-lg max-h-64 overflow-y-auto border"
+            style={{
+              background: "var(--card-bg)",
+              borderColor: "var(--card-border)",
+            }}
+          >
             {results.map((stock) => (
               <button
                 key={stock.symbol}
                 onClick={() => handleSelect(stock)}
-                className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0 flex items-center justify-between"
+                className="w-full text-left px-4 py-3 transition-colors border-b last:border-0 flex items-center justify-between hover:bg-blue-50 dark:hover:bg-slate-700"
+                style={{ borderColor: "var(--card-border)" }}
               >
                 <div>
-                  <span className="font-semibold text-gray-900 text-sm">
+                  <span
+                    className="font-semibold text-sm"
+                    style={{ color: "var(--foreground)" }}
+                  >
                     {stock.symbol}
                   </span>
-                  <p className="text-xs text-gray-500 truncate max-w-[250px]">
+                  <p
+                    className="text-xs truncate max-w-[250px]"
+                    style={{ color: "var(--muted)" }}
+                  >
                     {stock.name}
                   </p>
                 </div>
-                <span className="text-xs text-gray-400 ml-2">
+                <span
+                  className="text-xs ml-2"
+                  style={{ color: "var(--muted)" }}
+                >
                   {stock.exchange}
                 </span>
               </button>

@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
             marketCap: quote.marketCap ?? 0,
             pe: quote.trailingPE ?? 0,
             volume: quote.regularMarketVolume ?? 0,
+            industry: (quote as any).industry ?? null,
+            sector: (quote as any).sector ?? null,
           };
         } catch {
           return {
@@ -41,6 +43,8 @@ export async function GET(request: NextRequest) {
             marketCap: 0,
             pe: 0,
             volume: 0,
+            industry: null,
+            sector: null,
           };
         }
       })
