@@ -329,9 +329,11 @@ export default function StockDetailPage({
     }
   }, [symbol]);
 
-  const fetchNews = useCallback(async () => {
+  const fetchNews = useCallback(async (stockName?: string) => {
     try {
-      const res = await fetch(`/api/news?symbols=${symbol}`);
+      let url = `/api/news?symbols=${symbol}`;
+      if (stockName) url += `&name=${encodeURIComponent(stockName)}`;
+      const res = await fetch(url);
       const data = await res.json();
       if (Array.isArray(data)) setNews(data);
     } catch {
@@ -373,12 +375,12 @@ export default function StockDetailPage({
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      const [stockData] = await Promise.all([fetchDetail(), fetchNews()]);
+      const stockData = await fetchDetail();
+      // Fetch news with company name for precise matching
+      await fetchNews(stockData?.name);
       setLoading(false);
 
-      // Auto-analyze all news for sentiment + get recommendation
       if (stockData) {
-        // We'll trigger recommendation after initial load with whatever stock data we have
         fetchRecommendation(stockData, []);
       }
     };
