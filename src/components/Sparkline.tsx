@@ -18,7 +18,7 @@ export default function Sparkline({
   className = "",
 }: SparklineProps) {
   const id = useId();
-  const gradientId = `spark-${id.replace(/:/g, "")}`;
+  const gradientId = `spark-${id.replace(/[^a-zA-Z0-9]/g, "-")}`;
 
   if (!data || data.length < 2) {
     return (
