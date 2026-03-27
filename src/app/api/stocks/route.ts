@@ -17,12 +17,23 @@ export async function GET(request: NextRequest) {
 
     const quotes = await Promise.all(
       symbolList.map(async (symbol) => {
-        // Add .NS suffix for NSE (Indian market) if not already present
         const yahooSymbol = symbol.includes(".") ? symbol : `${symbol}.NS`;
         try {
           const quote: any = await yahooFinance.quote(yahooSymbol);
+
+          // Try to get sector info
+          let sector = "Other";
+          try {
+            const summary = await yahooFinance.quoteSummary(yahooSymbol, {
+              modules: ["assetProfile"],
+            });
+            sector = summary?.assetProfile?.sector || "Other";
+          } catch {
+            // sector unavailable
+          }
+
           return {
-            symbol: symbol, // Store without .NS for clean display
+            symbol,
             name: quote.shortName || quote.longName || symbol,
             price: quote.regularMarketPrice ?? 0,
             change: quote.regularMarketChange ?? 0,
@@ -30,6 +41,7 @@ export async function GET(request: NextRequest) {
             marketCap: quote.marketCap ?? 0,
             pe: quote.trailingPE ?? 0,
             volume: quote.regularMarketVolume ?? 0,
+            sector,
           };
         } catch {
           return {
@@ -41,6 +53,7 @@ export async function GET(request: NextRequest) {
             marketCap: 0,
             pe: 0,
             volume: 0,
+            sector: "Other",
           };
         }
       })

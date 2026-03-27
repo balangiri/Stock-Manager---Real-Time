@@ -1,15 +1,27 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Stock, NewsItem, WatchlistItem } from "@/lib/types";
+import { useAuth } from "@/lib/auth";
 import StockCard from "@/components/StockCard";
 import WatchlistPanel from "@/components/WatchlistPanel";
 import NewsFeed from "@/components/NewsFeed";
-import { BarChart3, RefreshCw, Loader2, Search } from "lucide-react";
+import {
+  BarChart3,
+  RefreshCw,
+  Loader2,
+  Search,
+  LogOut,
+  User,
+} from "lucide-react";
 
-const REFRESH_INTERVAL = 15000; // 15 seconds
+const REFRESH_INTERVAL = 15000;
 
 export default function Dashboard() {
+  const { user, session, loading: authLoading, signOut } = useAuth();
+  const router = useRouter();
+
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -18,16 +30,35 @@ export default function Dashboard() {
   const [filterQuery, setFilterQuery] = useState("");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Auth headers for API calls
+  const authHeaders = useCallback((): HeadersInit => {
+    const headers: HeadersInit = { "Content-Type": "application/json" };
+    if (session?.access_token) {
+      headers["Authorization"] = `Bearer ${session.access_token}`;
+    }
+    return headers;
+  }, [session]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [authLoading, user, router]);
+
   // Fetch watchlist from Supabase
   const fetchWatchlist = useCallback(async () => {
+    if (!session?.access_token) return;
     try {
-      const res = await fetch("/api/watchlist");
+      const res = await fetch("/api/watchlist", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
       const data = await res.json();
       if (Array.isArray(data)) setWatchlist(data);
     } catch (err) {
       console.error("Failed to fetch watchlist:", err);
     }
-  }, []);
+  }, [session]);
 
   // Fetch stock prices for all watchlist items
   const fetchStocks = useCallback(async (symbols: string[]) => {
@@ -59,15 +90,16 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Load everything on mount
+  // Load everything on mount (after auth)
   useEffect(() => {
+    if (!user || !session) return;
     const init = async () => {
       setLoading(true);
       await fetchWatchlist();
       setLoading(false);
     };
     init();
-  }, [fetchWatchlist]);
+  }, [user, session, fetchWatchlist]);
 
   // When watchlist changes, fetch stocks + news
   useEffect(() => {
@@ -99,7 +131,7 @@ export default function Dashboard() {
   const handleAddStock = async (symbol: string, name: string) => {
     const res = await fetch("/api/watchlist", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ symbol, name }),
     });
 
@@ -115,7 +147,7 @@ export default function Dashboard() {
   const handleRemoveStock = async (symbol: string) => {
     await fetch("/api/watchlist", {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ symbol }),
     });
     await fetchWatchlist();
@@ -156,12 +188,27 @@ export default function Dashboard() {
     setRefreshing(false);
   };
 
+  // Logout
+  const handleLogout = async () => {
+    await signOut();
+    router.push("/login");
+  };
+
   // Filter stocks by search query
   const filteredStocks = stocks.filter(
     (s) =>
       s.symbol.toLowerCase().includes(filterQuery.toLowerCase()) ||
       s.name.toLowerCase().includes(filterQuery.toLowerCase())
   );
+
+  // Show loading while auth is checking
+  if (authLoading || (!user && !authLoading)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -170,6 +217,9 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  const userName =
+    user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -186,7 +236,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 hidden sm:block">
               Auto-refreshes every 15s
             </span>
             <button
@@ -197,8 +247,25 @@ export default function Dashboard() {
               <RefreshCw
                 className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
               />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </button>
+
+            {/* User Menu */}
+            <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-blue-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-700 hidden sm:block">
+                {userName}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
