@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Stock, NewsItem, WatchlistItem } from "@/lib/types";
 import StockCard from "@/components/StockCard";
 import WatchlistPanel from "@/components/WatchlistPanel";
@@ -8,29 +9,54 @@ import NewsFeed from "@/components/NewsFeed";
 import MarketIndices from "@/components/MarketIndices";
 import IndustryBuckets from "@/components/IndustryBuckets";
 import ThemeToggle from "@/components/ThemeToggle";
-import { BarChart3, RefreshCw, Loader2, LayoutGrid, List } from "lucide-react";
+import {
+  BarChart3,
+  RefreshCw,
+  Loader2,
+  LayoutGrid,
+  List,
+  LogOut,
+  User,
+} from "lucide-react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const REFRESH_INTERVAL = 15000; // 15 seconds
 
 export default function Dashboard() {
+  const router = useRouter();
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<"industry" | "list">("industry");
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const supabase = createSupabaseBrowserClient();
+
+  // Fetch current user
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserEmail(user.email ?? null);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch watchlist from Supabase
   const fetchWatchlist = useCallback(async () => {
     try {
       const res = await fetch("/api/watchlist");
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
       const data = await res.json();
       if (Array.isArray(data)) setWatchlist(data);
     } catch (err) {
       console.error("Failed to fetch watchlist:", err);
     }
-  }, []);
+  }, [router]);
 
   // Fetch stock prices for all watchlist items
   const fetchStocks = useCallback(async (symbols: string[]) => {
@@ -160,6 +186,14 @@ export default function Dashboard() {
     setRefreshing(false);
   };
 
+  // Sign out
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
   if (loading) {
     return (
       <div
@@ -197,6 +231,12 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            {userEmail && (
+              <div className="hidden sm:flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
+                <User className="w-3.5 h-3.5" />
+                <span className="max-w-[160px] truncate">{userEmail}</span>
+              </div>
+            )}
             <span
               className="text-xs hidden sm:inline"
               style={{ color: "var(--muted)" }}
@@ -219,6 +259,23 @@ export default function Dashboard() {
               <span className="hidden sm:inline">Refresh</span>
             </button>
             <ThemeToggle />
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              title="Sign out"
+              className="flex items-center justify-center w-9 h-9 rounded-lg border transition-colors disabled:opacity-50"
+              style={{
+                color: "var(--muted)",
+                borderColor: "var(--card-border)",
+                background: "var(--card-bg)",
+              }}
+            >
+              {signingOut ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <LogOut className="w-4 h-4" />
+              )}
+            </button>
           </div>
         </div>
       </header>

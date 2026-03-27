@@ -1,12 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-// GET all watchlist items
+// Helper: get authenticated user or return 401
+async function getAuthenticatedUser() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return { user: null, supabase, unauthorized: true };
+  }
+  return { user, supabase, unauthorized: false };
+}
+
+// GET all watchlist items for the authenticated user
 export async function GET() {
+  const { user, supabase, unauthorized } = await getAuthenticatedUser();
+  if (unauthorized || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { data, error } = await supabase
       .from("watchlist")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
     if (error) throw error;
@@ -20,8 +40,13 @@ export async function GET() {
   }
 }
 
-// POST - add a stock to watchlist
+// POST - add a stock to watchlist for the authenticated user
 export async function POST(request: NextRequest) {
+  const { user, supabase, unauthorized } = await getAuthenticatedUser();
+  if (unauthorized || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { symbol, name } = await request.json();
 
@@ -32,11 +57,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if already exists
+    // Check if already exists for this user
     const { data: existing } = await supabase
       .from("watchlist")
       .select("id")
       .eq("symbol", symbol.toUpperCase())
+      .eq("user_id", user.id)
       .single();
 
     if (existing) {
@@ -48,7 +74,9 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("watchlist")
-      .insert([{ symbol: symbol.toUpperCase(), name: name || symbol }])
+      .insert([
+        { symbol: symbol.toUpperCase(), name: name || symbol, user_id: user.id },
+      ])
       .select()
       .single();
 
@@ -63,8 +91,13 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - remove a stock from watchlist
+// DELETE - remove a stock from the authenticated user's watchlist
 export async function DELETE(request: NextRequest) {
+  const { user, supabase, unauthorized } = await getAuthenticatedUser();
+  if (unauthorized || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { symbol } = await request.json();
 
@@ -78,7 +111,8 @@ export async function DELETE(request: NextRequest) {
     const { error } = await supabase
       .from("watchlist")
       .delete()
-      .eq("symbol", symbol.toUpperCase());
+      .eq("symbol", symbol.toUpperCase())
+      .eq("user_id", user.id);
 
     if (error) throw error;
     return NextResponse.json({ success: true });
