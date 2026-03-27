@@ -124,27 +124,99 @@ function SentimentBadge({ sentiment }: { sentiment?: string }) {
   );
 }
 
-// ─── AI Recommendation Gauge ───────────────────────────────────
+// ─── AI Recommendation Gauge (Enhanced) ────────────────────────
 function RecommendationGauge({
   buy,
   hold,
   sell,
+  signal,
+  confidence,
+  riskLevel,
+  technicalSignal,
+  sentimentSignal,
   reasoning,
 }: {
   buy: number;
   hold: number;
   sell: number;
+  signal?: string;
+  confidence?: number;
+  riskLevel?: string;
+  technicalSignal?: string;
+  sentimentSignal?: string;
   reasoning: string;
 }) {
+  const signalColor =
+    signal === "Strong Buy" || signal === "Buy"
+      ? "text-green-600 dark:text-green-400"
+      : signal === "Strong Sell" || signal === "Sell"
+        ? "text-red-600 dark:text-red-400"
+        : "text-yellow-600 dark:text-yellow-400";
+
+  const signalBg =
+    signal === "Strong Buy" || signal === "Buy"
+      ? "bg-green-100 dark:bg-green-900/30"
+      : signal === "Strong Sell" || signal === "Sell"
+        ? "bg-red-100 dark:bg-red-900/30"
+        : "bg-yellow-100 dark:bg-yellow-900/30";
+
+  const riskColor =
+    riskLevel === "High"
+      ? "text-red-600 dark:text-red-400"
+      : riskLevel === "Low"
+        ? "text-green-600 dark:text-green-400"
+        : "text-yellow-600 dark:text-yellow-400";
+
   return (
     <div
       className="rounded-xl border p-6"
       style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}
     >
-      <div className="flex items-center gap-2 mb-4">
-        <Bot className="w-5 h-5 text-purple-500" />
-        <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>AI Recommendation</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Bot className="w-5 h-5 text-purple-500" />
+          <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>
+            AI Recommendation
+          </h3>
+        </div>
+        {signal && (
+          <span
+            className={`text-sm font-bold px-3 py-1 rounded-full ${signalBg} ${signalColor}`}
+          >
+            {signal}
+          </span>
+        )}
       </div>
+
+      {/* Signal pills row */}
+      {(confidence || riskLevel || technicalSignal || sentimentSignal) && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {confidence && (
+            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full border"
+              style={{ borderColor: "var(--card-border)", color: "var(--foreground)" }}>
+              Confidence: {confidence}%
+            </span>
+          )}
+          {riskLevel && (
+            <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${riskColor}`}
+              style={{ borderColor: "var(--card-border)" }}>
+              Risk: {riskLevel}
+            </span>
+          )}
+          {technicalSignal && (
+            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full border"
+              style={{ borderColor: "var(--card-border)", color: "var(--foreground)" }}>
+              Technical: {technicalSignal}
+            </span>
+          )}
+          {sentimentSignal && (
+            <span className="text-[11px] font-medium px-2.5 py-1 rounded-full border"
+              style={{ borderColor: "var(--card-border)", color: "var(--foreground)" }}>
+              Sentiment: {sentimentSignal}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Horizontal stacked bar */}
       <div className="flex h-10 rounded-lg overflow-hidden mb-4 border" style={{ borderColor: "var(--card-border)" }}>
@@ -209,7 +281,7 @@ function RecommendationGauge({
         <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
         <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
           <strong>Disclaimer:</strong> This is an AI-powered recommendation
-          based on publicly available data and news sentiment. It is NOT
+          based on technical indicators, fundamentals, and news sentiment. It is NOT
           financial advice. Always do your own research or consult a certified
           financial advisor before making investment decisions.
         </p>
@@ -234,6 +306,11 @@ export default function StockDetailPage({
     buy: number;
     hold: number;
     sell: number;
+    signal?: string;
+    confidence?: number;
+    riskLevel?: string;
+    technicalSignal?: string;
+    sentimentSignal?: string;
     reasoning: string;
   } | null>(null);
   const [loadingRec, setLoadingRec] = useState(false);
@@ -637,6 +714,139 @@ export default function StockDetailPage({
           </div>
         </div>
 
+        {/* Technical Indicators */}
+        {stock.technicals && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            {/* RSI */}
+            <div className="rounded-xl border p-4" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>RSI (14)</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  stock.technicals.rsiSignal === "Overbought"
+                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                    : stock.technicals.rsiSignal === "Oversold"
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300"
+                }`}>
+                  {stock.technicals.rsiSignal}
+                </span>
+              </div>
+              <p className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
+                {stock.technicals.rsi ?? "N/A"}
+              </p>
+              <div className="mt-2 h-2 rounded-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 relative">
+                {stock.technicals.rsi != null && (
+                  <div
+                    className="absolute -top-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 shadow"
+                    style={{
+                      left: `calc(${Math.min(100, stock.technicals.rsi)}% - 6px)`,
+                      background: stock.technicals.rsi > 70 ? "#ef4444" : stock.technicals.rsi < 30 ? "#22c55e" : "#eab308",
+                    }}
+                  />
+                )}
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[9px] text-green-500">Oversold &lt;30</span>
+                <span className="text-[9px] text-red-500">Overbought &gt;70</span>
+              </div>
+            </div>
+
+            {/* MACD */}
+            <div className="rounded-xl border p-4" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>MACD</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  stock.technicals.macdTrend === "Bullish"
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                }`}>
+                  {stock.technicals.macdTrend}
+                </span>
+              </div>
+              <p className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
+                {stock.technicals.macd ?? "N/A"}
+              </p>
+              <div className="mt-2 space-y-1">
+                <div className="flex justify-between text-[10px]">
+                  <span style={{ color: "var(--muted)" }}>Signal</span>
+                  <span style={{ color: "var(--foreground)" }}>{stock.technicals.macdSignal ?? "N/A"}</span>
+                </div>
+                <div className="flex justify-between text-[10px]">
+                  <span style={{ color: "var(--muted)" }}>Histogram</span>
+                  <span className={stock.technicals.macdHistogram && stock.technicals.macdHistogram > 0 ? "text-green-500" : "text-red-500"}>
+                    {stock.technicals.macdHistogram ?? "N/A"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Volatility & Risk */}
+            <div className="rounded-xl border p-4" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>Risk & Volatility</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  stock.technicals.riskLevel === "High"
+                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                    : stock.technicals.riskLevel === "Low"
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                }`}>
+                  {stock.technicals.riskLevel} Risk
+                </span>
+              </div>
+              <p className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
+                {stock.technicals.volatility != null ? `${stock.technicals.volatility}%` : "N/A"}
+              </p>
+              <div className="mt-2 space-y-1">
+                <div className="flex justify-between text-[10px]">
+                  <span style={{ color: "var(--muted)" }}>Trend</span>
+                  <span className={stock.technicals.trend === "Bullish" ? "text-green-500" : "text-red-500"}>
+                    {stock.technicals.trend}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[10px]">
+                  <span style={{ color: "var(--muted)" }}>Bollinger</span>
+                  <span style={{ color: "var(--foreground)" }}>{stock.technicals.bollingerPosition}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Moving Averages Row */}
+        {stock.technicals && (
+          <div className="rounded-xl border p-4 mt-4" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+            <h4 className="text-xs font-medium mb-3" style={{ color: "var(--muted)" }}>Moving Averages</h4>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+              {[
+                { label: "SMA 20", value: stock.technicals.sma20 },
+                { label: "SMA 50", value: stock.technicals.sma50 },
+                { label: "SMA 200", value: stock.technicals.sma200 },
+                { label: "EMA 20", value: stock.technicals.ema20 },
+                { label: "EMA 50", value: stock.technicals.ema50 },
+              ].map((ma) => (
+                <div key={ma.label} className="text-center">
+                  <p className="text-[10px]" style={{ color: "var(--muted)" }}>{ma.label}</p>
+                  <p className={`text-sm font-semibold ${
+                    ma.value != null && stock.price > ma.value
+                      ? "text-green-500"
+                      : ma.value != null
+                        ? "text-red-500"
+                        : ""
+                  }`} style={ma.value == null ? { color: "var(--foreground)" } : {}}>
+                    {ma.value != null ? `₹${ma.value.toFixed(0)}` : "N/A"}
+                  </p>
+                  {ma.value != null && (
+                    <p className="text-[9px]" style={{ color: "var(--muted)" }}>
+                      {stock.price > ma.value ? "Above ↑" : "Below ↓"}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* AI Recommendation */}
         <div className="mt-6">
           {loadingRec ? (
@@ -651,6 +861,11 @@ export default function StockDetailPage({
               buy={recommendation.buy}
               hold={recommendation.hold}
               sell={recommendation.sell}
+              signal={recommendation.signal}
+              confidence={recommendation.confidence}
+              riskLevel={recommendation.riskLevel}
+              technicalSignal={recommendation.technicalSignal}
+              sentimentSignal={recommendation.sentimentSignal}
               reasoning={recommendation.reasoning}
             />
           ) : null}

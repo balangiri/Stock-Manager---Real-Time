@@ -51,6 +51,27 @@ export interface StockDetail {
   month1Return?: number;
   month3Return?: number;
   sector?: string;
+  technicals?: {
+    sma20: number | null;
+    sma50: number | null;
+    sma200: number | null;
+    ema20: number | null;
+    ema50: number | null;
+    rsi: number | null;
+    rsiSignal: string;
+    macd: number | null;
+    macdSignal: number | null;
+    macdHistogram: number | null;
+    macdTrend: string;
+    bollingerUpper: number | null;
+    bollingerMiddle: number | null;
+    bollingerLower: number | null;
+    bollingerPosition: string;
+    volatility: number | null;
+    dailyReturn: number | null;
+    trend: string;
+    riskLevel: string;
+  };
 }
 
 export interface MarketIndex {
