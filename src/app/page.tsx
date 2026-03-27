@@ -121,7 +121,7 @@ export default function Dashboard() {
     await fetchWatchlist();
   };
 
-  // Summarize a news article
+  // Summarize a news article with sentiment
   const handleSummarize = async (index: number) => {
     const item = news[index];
     try {
@@ -131,12 +131,17 @@ export default function Dashboard() {
         body: JSON.stringify({
           title: item.title,
           description: item.description,
+          analyzeSentiment: true,
         }),
       });
       const data = await res.json();
 
       setNews((prev) =>
-        prev.map((n, i) => (i === index ? { ...n, summary: data.summary } : n))
+        prev.map((n, i) =>
+          i === index
+            ? { ...n, summary: data.summary, sentiment: data.sentiment }
+            : n
+        )
       );
     } catch (err) {
       console.error("Summarize error:", err);

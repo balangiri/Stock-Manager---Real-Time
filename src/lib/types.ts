@@ -24,6 +24,7 @@ export interface NewsItem {
   publishedAt: string;
   symbol: string;
   summary?: string;
+  sentiment?: "positive" | "negative" | "neutral";
 }
 
 export interface StockDetail {
@@ -37,10 +38,14 @@ export interface StockDetail {
   eps: number;
   high52: number;
   low52: number;
+  dayHigh: number;
+  dayLow: number;
   volume: number;
   avgVolume: number;
   dividend: number;
   beta: number;
   revenue: number;
   profit: number;
+  month1Return?: number;
+  month3Return?: number;
 }
