@@ -16,6 +16,14 @@ export interface WatchlistItem {
   symbol: string;
   name: string;
   created_at: string;
+  user_id: string;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  /** Future freemium: plan tier, defaults to "free" */
+  plan?: "free" | "pro";
 }
 
 export interface NewsItem {
