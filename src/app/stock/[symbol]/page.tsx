@@ -22,6 +22,7 @@ import {
   Calendar,
 } from "lucide-react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const REFRESH_INTERVAL = 15000;
 
@@ -54,7 +55,7 @@ function PriceRangeMeter({
   return (
     <div className="mb-5">
       <div className="flex justify-between items-center mb-1">
-        <span className="text-xs font-medium text-gray-500">{label}</span>
+        <span className="text-xs font-medium" style={{ color: "var(--muted)" }}>{label}</span>
         <span className={`text-xs font-bold ${getGradientColor()}`}>
           ₹{current.toFixed(2)}
         </span>
@@ -66,7 +67,9 @@ function PriceRangeMeter({
           className="absolute -top-1 transition-all duration-500"
           style={{ left: `calc(${percent}% - 10px)` }}
         >
-          <div className="w-5 h-5 bg-white border-2 border-gray-800 rounded-full shadow-lg flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-gray-800 rounded-full shadow-lg flex items-center justify-center"
+            style={{ background: "var(--card-bg)" }}
+          >
             <div className="w-2 h-2 bg-gray-800 rounded-full" />
           </div>
         </div>
@@ -90,20 +93,20 @@ function SentimentBadge({ sentiment }: { sentiment?: string }) {
 
   const config = {
     positive: {
-      bg: "bg-green-50 border-green-200",
-      text: "text-green-700",
+      bg: "bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-700",
+      text: "text-green-700 dark:text-green-400",
       icon: <ThumbsUp className="w-3 h-3" />,
       label: "Positive",
     },
     negative: {
-      bg: "bg-red-50 border-red-200",
-      text: "text-red-700",
+      bg: "bg-red-50 border-red-200 dark:bg-red-900/30 dark:border-red-700",
+      text: "text-red-700 dark:text-red-400",
       icon: <ThumbsDown className="w-3 h-3" />,
       label: "Negative",
     },
     neutral: {
-      bg: "bg-gray-50 border-gray-200",
-      text: "text-gray-600",
+      bg: "bg-gray-50 border-gray-200 dark:bg-slate-700/50 dark:border-slate-600",
+      text: "text-gray-600 dark:text-slate-300",
       icon: <Minus className="w-3 h-3" />,
       label: "Neutral",
     },
@@ -134,14 +137,17 @@ function RecommendationGauge({
   reasoning: string;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div
+      className="rounded-xl border p-6"
+      style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}
+    >
       <div className="flex items-center gap-2 mb-4">
         <Bot className="w-5 h-5 text-purple-500" />
-        <h3 className="font-semibold text-gray-900">AI Recommendation</h3>
+        <h3 className="font-semibold" style={{ color: "var(--foreground)" }}>AI Recommendation</h3>
       </div>
 
       {/* Horizontal stacked bar */}
-      <div className="flex h-10 rounded-lg overflow-hidden mb-4 border border-gray-100">
+      <div className="flex h-10 rounded-lg overflow-hidden mb-4 border" style={{ borderColor: "var(--card-border)" }}>
         {buy > 0 && (
           <div
             className="bg-green-500 flex items-center justify-center transition-all duration-700"
@@ -178,30 +184,30 @@ function RecommendationGauge({
       <div className="flex gap-4 mb-4">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 bg-green-500 rounded-sm" />
-          <span className="text-xs text-gray-600">Buy {buy}%</span>
+          <span className="text-xs" style={{ color: "var(--muted)" }}>Buy {buy}%</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 bg-yellow-400 rounded-sm" />
-          <span className="text-xs text-gray-600">Hold {hold}%</span>
+          <span className="text-xs" style={{ color: "var(--muted)" }}>Hold {hold}%</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 bg-red-500 rounded-sm" />
-          <span className="text-xs text-gray-600">Sell {sell}%</span>
+          <span className="text-xs" style={{ color: "var(--muted)" }}>Sell {sell}%</span>
         </div>
       </div>
 
       {/* AI Reasoning */}
-      <div className="p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-100">
-        <p className="text-sm text-gray-700 leading-relaxed flex items-start gap-2">
+      <div className="p-3 rounded-lg border bg-purple-50 border-purple-100 dark:bg-purple-900/20 dark:border-purple-800">
+        <p className="text-sm leading-relaxed flex items-start gap-2" style={{ color: "var(--foreground)" }}>
           <Sparkles className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
           {reasoning}
         </p>
       </div>
 
       {/* Disclaimer */}
-      <div className="mt-3 flex items-start gap-2 p-2 bg-amber-50 rounded-lg border border-amber-200">
-        <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-        <p className="text-[10px] text-amber-700 leading-relaxed">
+      <div className="mt-3 flex items-start gap-2 p-2 rounded-lg border bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800">
+        <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">
           <strong>Disclaimer:</strong> This is an AI-powered recommendation
           based on publicly available data and news sentiment. It is NOT
           financial advice. Always do your own research or consult a certified
@@ -422,7 +428,7 @@ export default function StockDetailPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--background)" }}>
         <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
       </div>
     );
@@ -430,7 +436,7 @@ export default function StockDetailPage({
 
   if (error || !stock) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "var(--background)" }}>
         <p className="text-red-500 mb-4">{error || "Stock not found"}</p>
         <Link href="/" className="text-blue-600 hover:underline">
           Go back
@@ -442,32 +448,36 @@ export default function StockDetailPage({
   const isPositive = stock.change >= 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: "var(--background)" }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="border-b sticky top-0 z-10" style={{ background: "var(--header-bg)", borderColor: "var(--header-border)" }}>
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <Link
               href="/"
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600"
+              className="flex items-center gap-2 text-sm hover:text-blue-600 transition-colors"
+              style={{ color: "var(--muted)" }}
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Dashboard
             </Link>
-            <span className="text-xs text-gray-400">
-              Auto-refreshes every 15s
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs" style={{ color: "var(--muted)" }}>
+                Auto-refreshes every 15s
+              </span>
+              <ThemeToggle />
+            </div>
           </div>
 
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold" style={{ color: "var(--foreground)" }}>
                 {stock.symbol}
               </h1>
-              <p className="text-gray-500">{stock.name}</p>
+              <p style={{ color: "var(--muted)" }}>{stock.name}</p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-3xl font-bold" style={{ color: "var(--foreground)" }}>
                 ₹{stock.price.toFixed(2)}
               </p>
               <div className="flex items-center gap-2 justify-end mt-1">
@@ -552,8 +562,8 @@ export default function StockDetailPage({
         {/* Price Range Meters + Financials */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           {/* Price Range Meters */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-5">
+          <div className="rounded-xl border p-6" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+            <h3 className="font-semibold mb-5" style={{ color: "var(--foreground)" }}>
               Price Range Analysis
             </h3>
 
@@ -571,7 +581,7 @@ export default function StockDetailPage({
               label="52-Week Range"
             />
 
-            <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
+            <div className="space-y-3 mt-4 pt-4 border-t" style={{ borderColor: "var(--card-border)" }}>
               <InfoRow
                 label="Volume"
                 value={formatVolume(stock.volume)}
@@ -588,8 +598,8 @@ export default function StockDetailPage({
           </div>
 
           {/* Financials */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Financials</h3>
+          <div className="rounded-xl border p-6" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+            <h3 className="font-semibold mb-4" style={{ color: "var(--foreground)" }}>Financials</h3>
             <div className="space-y-3">
               <InfoRow
                 label="Revenue"
@@ -630,9 +640,9 @@ export default function StockDetailPage({
         {/* AI Recommendation */}
         <div className="mt-6">
           {loadingRec ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-center gap-3">
+            <div className="rounded-xl border p-6 flex items-center justify-center gap-3" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
               <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
-              <span className="text-sm text-gray-500">
+              <span className="text-sm" style={{ color: "var(--muted)" }}>
                 Generating AI recommendation...
               </span>
             </div>
@@ -649,7 +659,7 @@ export default function StockDetailPage({
         {/* News Section for this Stock */}
         <div className="mt-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2" style={{ color: "var(--foreground)" }}>
               <Newspaper className="w-5 h-5 text-blue-500" />
               News for {stock.symbol}
             </h2>
@@ -670,14 +680,15 @@ export default function StockDetailPage({
               {news.map((item, index) => (
                 <div
                   key={`${item.url}-${index}`}
-                  className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                  className="rounded-xl border p-4 hover:shadow-md transition-shadow"
+                  style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}
                 >
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                    <span className="text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-full">
                       {item.symbol}
                     </span>
                     <SentimentBadge sentiment={item.sentiment} />
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs" style={{ color: "var(--muted)" }}>
                       {item.source} · {timeAgo(item.publishedAt)}
                     </span>
                   </div>
@@ -685,15 +696,16 @@ export default function StockDetailPage({
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-gray-900 hover:text-blue-600 transition-colors flex items-start gap-1"
+                    className="font-medium hover:text-blue-600 transition-colors flex items-start gap-1"
+                    style={{ color: "var(--foreground)" }}
                   >
                     {item.title}
                     <ExternalLink className="w-3 h-3 mt-1 flex-shrink-0 text-gray-400" />
                   </a>
 
                   {item.summary ? (
-                    <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-100">
-                      <p className="text-sm text-gray-700 leading-relaxed flex items-start gap-2">
+                    <div className="mt-3 p-3 rounded-lg border bg-purple-50 border-purple-100 dark:bg-purple-900/20 dark:border-purple-800">
+                      <p className="text-sm leading-relaxed flex items-start gap-2" style={{ color: "var(--foreground)" }}>
                         <Sparkles className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
                         {item.summary}
                       </p>
@@ -721,9 +733,9 @@ export default function StockDetailPage({
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <Newspaper className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">
+            <div className="rounded-xl border p-8 text-center" style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}>
+              <Newspaper className="w-12 h-12 mx-auto mb-3" style={{ color: "var(--card-border)" }} />
+              <p style={{ color: "var(--muted)" }}>
                 No news available for {stock.symbol}
               </p>
             </div>
@@ -748,13 +760,17 @@ function MetricCard({
   valueColor?: string;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
+    <div
+      className="rounded-xl border p-4"
+      style={{ background: "var(--card-bg)", borderColor: "var(--card-border)" }}
+    >
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <span className="text-xs text-gray-500">{label}</span>
+        <span className="text-xs" style={{ color: "var(--muted)" }}>{label}</span>
       </div>
       <p
-        className={`text-lg font-semibold ${valueColor || "text-gray-900"}`}
+        className={`text-lg font-semibold ${valueColor || ""}`}
+        style={valueColor ? {} : { color: "var(--foreground)" }}
       >
         {value}
       </p>
@@ -764,9 +780,9 @@ function MetricCard({
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900">{value}</span>
+    <div className="flex justify-between items-center py-1 border-b last:border-0" style={{ borderColor: "var(--card-border)" }}>
+      <span className="text-sm" style={{ color: "var(--muted)" }}>{label}</span>
+      <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>{value}</span>
     </div>
   );
 }

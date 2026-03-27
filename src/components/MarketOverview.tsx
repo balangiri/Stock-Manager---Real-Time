@@ -59,7 +59,7 @@ function IndexCard({ index }: { index: MarketIndex }) {
   const chartGradient = isPositive ? "greenGrad" : "redGrad";
 
   // Format chart data for recharts
-  const chartData = index.chartData.map((d) => ({
+  const chartData = (index.chartData || []).map((d) => ({
     time: new Date(d.time).toLocaleTimeString("en-IN", {
       hour: "2-digit",
       minute: "2-digit",
@@ -170,7 +170,7 @@ function IndexCard({ index }: { index: MarketIndex }) {
         <span>
           Prev Close:{" "}
           <strong>
-            {index.previousClose.toLocaleString("en-IN", {
+            {(index.previousClose ?? 0).toLocaleString("en-IN", {
               maximumFractionDigits: 2,
             })}
           </strong>
@@ -178,11 +178,11 @@ function IndexCard({ index }: { index: MarketIndex }) {
         <span>
           Day:{" "}
           <strong>
-            {index.dayLow.toLocaleString("en-IN", {
+            {(index.dayLow ?? 0).toLocaleString("en-IN", {
               maximumFractionDigits: 0,
             })}{" "}
             –{" "}
-            {index.dayHigh.toLocaleString("en-IN", {
+            {(index.dayHigh ?? 0).toLocaleString("en-IN", {
               maximumFractionDigits: 0,
             })}
           </strong>

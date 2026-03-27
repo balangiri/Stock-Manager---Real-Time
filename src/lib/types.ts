@@ -7,6 +7,7 @@ export interface Stock {
   marketCap?: number;
   pe?: number;
   volume?: number;
+  industry?: string;
   sector?: string;
 }
 
@@ -58,8 +59,9 @@ export interface MarketIndex {
   price: number;
   change: number;
   changePercent: number;
-  dayHigh: number;
-  dayLow: number;
-  previousClose: number;
-  chartData: { time: string; value: number }[];
+  dayHigh?: number;
+  dayLow?: number;
+  previousClose?: number;
+  chartData?: { time: string; value: number }[];
+  sparkline?: number[];
 }
