@@ -37,8 +37,10 @@ export async function GET(request: NextRequest) {
             // sector unavailable
           }
 
-          // Fetch 1 month of historical data for weekly/monthly calculations
+          // Fetch 1 year of historical data for weekly/monthly/yearly calculations
           const now = new Date();
+          const oneYearAgo = new Date(now);
+          oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
           const oneMonthAgo = new Date(now);
           oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
           const oneWeekAgo = new Date(now);
@@ -46,12 +48,13 @@ export async function GET(request: NextRequest) {
 
           let weeklyChange = 0;
           let monthlyChange = 0;
+          let yearlyChange = 0;
           let weeklyVolume = 0;
           let monthlyVolume = 0;
 
           try {
             const historical = await yahooFinance.chart(yahooSymbol, {
-              period1: oneMonthAgo.toISOString().split("T")[0],
+              period1: oneYearAgo.toISOString().split("T")[0],
               period2: now.toISOString().split("T")[0],
               interval: "1d",
             });
@@ -62,14 +65,27 @@ export async function GET(request: NextRequest) {
               );
               const currentPrice = quote.regularMarketPrice ?? 0;
 
-              // Monthly calculations (all quotes)
+              // Yearly calculation (first quote ~ 1 year ago)
               if (allQuotes.length > 0) {
-                const monthStartPrice = allQuotes[0].close ?? currentPrice;
+                const yearStartPrice = allQuotes[0].close ?? currentPrice;
+                yearlyChange =
+                  yearStartPrice > 0
+                    ? ((currentPrice - yearStartPrice) / yearStartPrice) * 100
+                    : 0;
+              }
+
+              // Monthly calculations (last ~22 trading days)
+              const monthTs = oneMonthAgo.getTime();
+              const monthQuotes = allQuotes.filter(
+                (q: any) => new Date(q.date).getTime() >= monthTs
+              );
+              if (monthQuotes.length > 0) {
+                const monthStartPrice = monthQuotes[0].close ?? currentPrice;
                 monthlyChange =
                   monthStartPrice > 0
                     ? ((currentPrice - monthStartPrice) / monthStartPrice) * 100
                     : 0;
-                monthlyVolume = allQuotes.reduce(
+                monthlyVolume = monthQuotes.reduce(
                   (sum: number, q: any) => sum + (q.volume ?? 0),
                   0
                 );
@@ -108,6 +124,7 @@ export async function GET(request: NextRequest) {
             industry,
             weeklyChange: +weeklyChange.toFixed(2),
             monthlyChange: +monthlyChange.toFixed(2),
+            yearlyChange: +yearlyChange.toFixed(2),
             weeklyVolume,
             monthlyVolume,
           };
@@ -124,6 +141,7 @@ export async function GET(request: NextRequest) {
             industry: "Other",
             weeklyChange: 0,
             monthlyChange: 0,
+            yearlyChange: 0,
             weeklyVolume: 0,
             monthlyVolume: 0,
           };

@@ -86,6 +86,7 @@ export interface HeatmapStock {
   industry: string;
   weeklyChange: number;
   monthlyChange: number;
+  yearlyChange: number;
   weeklyVolume: number;
   monthlyVolume: number;
 }

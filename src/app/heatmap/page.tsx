@@ -15,7 +15,7 @@ import {
 
 // ─── Types ─────────────────────────────────────────────────────
 type SizeBy = "marketCap" | "volume" | "weeklyVolume" | "monthlyVolume";
-type ColorBy = "changePercent" | "weeklyChange" | "monthlyChange";
+type ColorBy = "changePercent" | "weeklyChange" | "monthlyChange" | "yearlyChange";
 type GroupBy = "none" | "sector" | "industry";
 
 const SIZE_OPTIONS: { value: SizeBy; label: string }[] = [
@@ -29,6 +29,7 @@ const COLOR_OPTIONS: { value: ColorBy; label: string }[] = [
   { value: "changePercent", label: "Daily %" },
   { value: "weeklyChange", label: "Weekly %" },
   { value: "monthlyChange", label: "Monthly %" },
+  { value: "yearlyChange", label: "52 Week %" },
 ];
 
 const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
@@ -37,30 +38,35 @@ const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
   { value: "industry", label: "Industry" },
 ];
 
+// ─── Color Scale Ranges ────────────────────────────────────────
+const COLOR_SCALES: Record<ColorBy, number> = {
+  changePercent: 8,
+  weeklyChange: 8,
+  monthlyChange: 15,
+  yearlyChange: 50,
+};
+
 // ─── Color Utilities ───────────────────────────────────────────
-function getHeatColor(value: number): string {
-  // Clamp between -8 and +8 for color intensity
-  const clamped = Math.max(-8, Math.min(8, value));
-  const intensity = Math.abs(clamped) / 8;
+function getHeatColor(value: number, scale: number = 8): string {
+  const clamped = Math.max(-scale, Math.min(scale, value));
+  const intensity = Math.abs(clamped) / scale;
 
   if (value > 0) {
-    // Green shades: more positive = deeper green
     const r = Math.round(20 + (1 - intensity) * 30);
     const g = Math.round(80 + intensity * 100);
     const b = Math.round(20 + (1 - intensity) * 30);
     return `rgb(${r}, ${g}, ${b})`;
   } else if (value < 0) {
-    // Red shades: more negative = deeper red
     const r = Math.round(80 + intensity * 120);
     const g = Math.round(20 + (1 - intensity) * 30);
     const b = Math.round(20 + (1 - intensity) * 20);
     return `rgb(${r}, ${g}, ${b})`;
   }
-  return "rgb(60, 60, 70)"; // neutral gray
+  return "rgb(60, 60, 70)";
 }
 
-function getTextColor(value: number): string {
-  const intensity = Math.min(Math.abs(value) / 8, 1);
+function getTextColor(value: number, scale: number = 8): string {
+  const intensity = Math.min(Math.abs(value) / scale, 1);
   return intensity > 0.3 ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.7)";
 }
 
@@ -243,8 +249,9 @@ function TreemapTile({
   containerH: number;
 }) {
   const colorValue = rect.stock[colorBy];
-  const bgColor = getHeatColor(colorValue);
-  const txtColor = getTextColor(colorValue);
+  const scale = COLOR_SCALES[colorBy];
+  const bgColor = getHeatColor(colorValue, scale);
+  const txtColor = getTextColor(colorValue, scale);
 
   const pxW = rect.w * containerW;
   const pxH = rect.h * containerH;
@@ -577,17 +584,21 @@ export default function HeatmapPage() {
 
             {/* Color Legend */}
             <div className="flex items-center gap-2 ml-auto">
-              <span className="text-[10px]" style={{ color: "var(--muted)" }}>-8%</span>
+              <span className="text-[10px]" style={{ color: "var(--muted)" }}>-{COLOR_SCALES[colorBy]}%</span>
               <div className="flex h-3 rounded overflow-hidden">
-                {[-8, -6, -4, -2, 0, 2, 4, 6, 8].map((v) => (
-                  <div
-                    key={v}
-                    className="w-5 h-3"
-                    style={{ backgroundColor: getHeatColor(v) }}
-                  />
-                ))}
+                {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map((v) => {
+                  const scale = COLOR_SCALES[colorBy];
+                  const scaledV = (v / 4) * scale;
+                  return (
+                    <div
+                      key={v}
+                      className="w-5 h-3"
+                      style={{ backgroundColor: getHeatColor(scaledV, scale) }}
+                    />
+                  );
+                })}
               </div>
-              <span className="text-[10px]" style={{ color: "var(--muted)" }}>+8%</span>
+              <span className="text-[10px]" style={{ color: "var(--muted)" }}>+{COLOR_SCALES[colorBy]}%</span>
             </div>
           </div>
         </div>
@@ -613,6 +624,9 @@ export default function HeatmapPage() {
             </span>
             <span className={hoveredStock.monthlyChange >= 0 ? "text-green-500" : "text-red-500"}>
               {hoveredStock.monthlyChange >= 0 ? "+" : ""}{hoveredStock.monthlyChange.toFixed(2)}% month
+            </span>
+            <span className={hoveredStock.yearlyChange >= 0 ? "text-green-500" : "text-red-500"}>
+              {hoveredStock.yearlyChange >= 0 ? "+" : ""}{hoveredStock.yearlyChange.toFixed(2)}% 52W
             </span>
             <span style={{ color: "var(--muted)" }}>
               MCap: ₹{hoveredStock.marketCap >= 1e12 ? (hoveredStock.marketCap / 1e12).toFixed(2) + "T" : hoveredStock.marketCap >= 1e9 ? (hoveredStock.marketCap / 1e9).toFixed(2) + "B" : (hoveredStock.marketCap / 1e7).toFixed(2) + "Cr"}
