@@ -74,6 +74,22 @@ export interface StockDetail {
   };
 }
 
+export interface HeatmapStock {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  marketCap: number;
+  volume: number;
+  sector: string;
+  industry: string;
+  weeklyChange: number;
+  monthlyChange: number;
+  weeklyVolume: number;
+  monthlyVolume: number;
+}
+
 export interface MarketIndex {
   symbol: string;
   name: string;

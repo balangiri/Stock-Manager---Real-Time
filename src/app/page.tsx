@@ -18,7 +18,9 @@ import {
   List,
   LogOut,
   User,
+  Grid3X3,
 } from "lucide-react";
+import Link from "next/link";
 
 const REFRESH_INTERVAL = 15000;
 
@@ -256,6 +258,18 @@ export default function Dashboard() {
             >
               Auto-refreshes every 15s
             </span>
+            <Link
+              href="/heatmap"
+              className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors hover:border-blue-500 hover:text-blue-500"
+              style={{
+                color: "var(--muted)",
+                borderColor: "var(--card-border)",
+                background: "var(--card-bg)",
+              }}
+            >
+              <Grid3X3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Heatmap</span>
+            </Link>
             <button
               onClick={handleRefresh}
               disabled={refreshing}
